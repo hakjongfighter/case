@@ -5,7 +5,7 @@
 # 필요한 값(Settings → Secrets and variables → Actions)
 #   비밀값 GA_SA_KEY: 구글 서비스 계정 JSON(ga-reader@eduplan-stats.iam.gserviceaccount.com, 두 GA4 속성에 '뷰어')
 #   비밀값 STATS_PASSWORD: 관리자 페이지 비밀번호
-#   변수(또는 비밀값) GA_PROPERTY_ID: 강남에듀플랜 GA4 속성 ID(숫자)
+#   속성 ID(강남 564792737 · 대치 564790623)는 아래에 직접 적어 둠
 # 숫자는 STATS_PASSWORD로 암호화해서만 올라가므로, 공개 저장소 · 공개 주소여도 비밀번호 없이는 볼 수 없음
 name: 방문 현황 배포
 
@@ -44,7 +44,7 @@ jobs:
         env:
           GA_SA_KEY: ${{ secrets.GA_SA_KEY }}
           STATS_PASSWORD: ${{ secrets.STATS_PASSWORD }}
-          GA_PROPERTY_ID: ${{ vars.GA_PROPERTY_ID || secrets.GA_PROPERTY_ID }}   # 강남. 변수 · 비밀값 어느 쪽에 넣어도 읽음
+          GA_PROPERTY_ID: '564792737'   # 강남에듀플랜(eduplan.kr) 속성 ID(사용자 11/18). 비밀값 아님
           GA_PROPERTY_ID_DAECHI: '564790623'   # 대치마스터교육(gongboomaster.com) 속성 ID. 비밀값 아님
         run: |
           if [ -n "$GA_SA_KEY" ]; then pip install -q google-analytics-data==0.20.0 cryptography==44.0.0; fi
