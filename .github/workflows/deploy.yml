@@ -1,0 +1,57 @@
+# 관리자 페이지(방문 현황) 배포. 강남에듀플랜 · 대치마스터교육 GA4 숫자를 받아 GitHub Pages로 올립니다(커밋 없음).
+# 11/18: eduplan-site(비공개)에서 이 공개 저장소로 옮김 → Actions 무료 · 무제한, 홈페이지 저장소에 자동 커밋이 쌓이지 않음
+# 화면 주소: eduplan.kr/stats (eduplan-site의 cloudflare/worker.js가 이 페이지를 대신 불러와 보여 줌). 직접 주소: hakjongfighter.com/case/
+# 처음 한 번: Settings → Pages → Source를 "GitHub Actions"로
+# 필요한 값(Settings → Secrets and variables → Actions)
+#   비밀값 GA_SA_KEY: 구글 서비스 계정 JSON(ga-reader@eduplan-stats.iam.gserviceaccount.com, 두 GA4 속성에 '뷰어')
+#   비밀값 STATS_PASSWORD: 관리자 페이지 비밀번호
+#   변수(또는 비밀값) GA_PROPERTY_ID: 강남에듀플랜 GA4 속성 ID(숫자)
+# 숫자는 STATS_PASSWORD로 암호화해서만 올라가므로, 공개 저장소 · 공개 주소여도 비밀번호 없이는 볼 수 없음
+name: 방문 현황 배포
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '7 * * * *'   # 1시간마다(사용자 11/18). GitHub 일정 실행은 몇 분 늦을 수 있음
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 올릴 파일 모으기 (_site)
+        run: |
+          mkdir -p _site
+          cp -R index.html assets _site/
+      - name: GA4 숫자 받기 (_site/stats.json)
+        env:
+          GA_SA_KEY: ${{ secrets.GA_SA_KEY }}
+          STATS_PASSWORD: ${{ secrets.STATS_PASSWORD }}
+          GA_PROPERTY_ID: ${{ vars.GA_PROPERTY_ID || secrets.GA_PROPERTY_ID }}   # 강남. 변수 · 비밀값 어느 쪽에 넣어도 읽음
+          GA_PROPERTY_ID_DAECHI: '564790623'   # 대치마스터교육(gongboomaster.com) 속성 ID. 비밀값 아님
+        run: |
+          if [ -n "$GA_SA_KEY" ]; then pip install -q google-analytics-data==0.20.0 cryptography==44.0.0; fi
+          python .github/scripts/fetch_ga.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
